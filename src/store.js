@@ -1,47 +1,55 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
-import Api from './services/Api';
+import usersApi from './services/usersApi';
 
 Vue.use(Vuex);
 
 export default new Vuex.Store({
     state: {
         status: '',
-        token: '',
-        user: {}
+        usersList: [],
+        singleUser: {}
     },
     mutations: {
-        auth_request(state) {
-            state.status = 'loading'
+        users_request(state) {
+            state.status = 'loading';
         },
-        auth_success(state, token, user) {
+        usersList_success(state, users) {
             state.status = 'success';
-            state.token = token;
-            state.user = user;
+            state.usersList = users;
         },
-        auth_error(state) {
-            state.status = 'error'
+        singleUser_success(state, user) {
+            let keys = Object.keys(user);
+            let values = Object.values(user).map(value => !value ? 'n/a' : value);
+
+            state.status = 'success';
+            state.singleUser = Object.fromEntries(keys.map((_, i) => [keys[i], values[i]]));
+        },
+        users_error(state) {
+            state.status = 'error';
         }
     },
     actions: {
-        login({ commit }, user) {
-            return new Promise((resolve, reject) => {
-                commit('auth_request');
-                Api({ url: '', data: user, method: 'POST' })
-                    .then(response => {
-                        const user = response.data.user;
-                        const token = user.secret.token;
-                        commit('auth_success', token, user);
+        getUsers({commit}) {
+            commit('users_request');
 
-                        resolve(response.data);
-                    })
-                    .catch(err => reject(err.response.data))
-            })
+            usersApi
+                .getUsersList()
+                .then(users => commit('usersList_success', users))
+                .catch(err => Vue.prototype.$eventHub.$emit('show-error', err));
+        },
+        getSingleUser({commit}, username) {
+            commit('users_request');
+
+            usersApi
+                .getSingleUser(username)
+                .then(user => commit('singleUser_success', user))
+                .catch(err => Vue.prototype.$eventHub.$emit('show-error', err));
         }
     },
     getters: {
-        isLoggedIn: state => !!state.token,
-        currentUser: state => !!state.user,
-        authStatus: state => state.status
+        getStatus: state => state.status,
+        requestedUsersList: state => state.usersList,
+        requestedSingleUser: state => state.singleUser
     }
 });

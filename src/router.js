@@ -16,19 +16,19 @@ const routes = [
         children: [
             {
                 path: 'login',
-                name: 'Login',
+                name: 'users-login',
                 meta: { title: 'Users Login Page' },
                 component: () => import('./components/users-login')
             },
             {
                 path: 'list',
-                name: 'Register',
+                name: 'users-list',
                 meta: { title: 'Users List' },
                 component: () => import('./components/users-list')
             },
             {
                 path: ':user/details',
-                name: 'Register',
+                name: 'users-details',
                 meta: { title: 'User details' },
                 component: () => import('./components/users-details')
             }
@@ -41,6 +41,13 @@ const router = new Router({
     linkActiveClass: 'active',
     linkExactActiveClass: 'exact-active',
     routes
+});
+
+router.beforeEach((to, from, next) => {
+    if (to.matched.some(record => record.meta.title)) {
+        document.title = to.meta.title;
+        next();
+    } else next();
 });
 
 export default router;
